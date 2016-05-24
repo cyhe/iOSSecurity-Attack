@@ -1,9 +1,10 @@
 Package: com.hhly.hhlydemoioshookertweak
 Name: hhlydemoioshookertweak
 Depends: mobilesubstrate
-Version: 1.0
 Architecture: iphoneos-arm
 Description: ByCXF160524!
 Maintainer: esirnus
 Author: esirnus
 Section: Tweaks
+Version: 1.0-6+debug
+Installed-Size: 136
