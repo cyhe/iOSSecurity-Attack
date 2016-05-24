@@ -1,0 +1,9 @@
+Package: com.hhly.iostargetapphhly
+Name: iostargetapphhly
+Depends: 
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: ByCXF160523!xinsaisai!
+Maintainer: esirnus
+Author: esirnus
+Section: Utilities
