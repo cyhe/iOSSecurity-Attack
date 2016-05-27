@@ -55,7 +55,7 @@ debugserver 192.168.35.252:1234 -a "AppStore"
 
 **ps:两个注意点:1.一定要开启端口号(:1234),1234端口号是自己指定的;2.iOS上的"/Develpoer/"目录下缺少必要的调试数据,这种情况一般是没有在Xcode中添加设备,在Xcode-->Window-->Devices菜单中添加设备(靠....切记切记,折腾了一天,😢);**
 
-*配置好debugserver后启动Xcode的LLDB就可以调试了(注:X6的lldb有bug,在armv7和armv7s上设备上有事会混淆ARM和THUMB指令,导致无法调试,X7已修复)*
+*配置好debugserver后启动Xcode的LLDB就可以调试了(注:X6的lldb有bug,在armv7和armv7s上设备上有时会混淆ARM和THUMB指令,导致无法调试,X7已修复)*
 
 ![启动连接命令](http://o7pqb42yk.bkt.clouddn.com/1DBBE39E-D211-4B7F-86FD-5E246E6CBFB2.png)
 通过此命令启动后,耗时较长,在进程停止后就可以开始调试了
@@ -72,7 +72,8 @@ debugserver 192.168.35.252:1234 -a "AppStore"
 
 >**NSLog的基地址 = NSLog在Foundation中的相对位置 + Foudation的基地址**
 
-##### 公式推导:
+* 公式推导:
+
 >**偏移后模块基地址 = 偏移前模块基地址 + ALSR偏移**
 
 >**偏移后符号基地址 = 偏移前符号基地址 + 符号所在模块的ALSR偏移**
