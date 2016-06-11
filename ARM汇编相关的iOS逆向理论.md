@@ -1,6 +1,5 @@
 ## 1. ARM汇编基础
-前言
-
+在逆向一个功能的时候,往往需要分析大量的汇编代码,在iOS逆向中,ARM汇编是必须掌握的语言,本文总结了ARM汇编的基础知识,如果你想了解更多,请参考狗神的小黄书《iOS逆向逆向工程》或[ARM官方手册](http://infocenter.arm.com).
 
 ##### 1.1 寄存器,内存和栈
 >在ARM汇编里,操作对象是寄存器,内存和栈
@@ -178,9 +177,15 @@ V(overflow)如果操作导致溢出,则置1,否则置0
 
 
 ##### 2.2 内存操作指令
-内存操作指令的基本格式是:
+>内存操作指令的基本格式是:
+
+```
 op{cond}{type} Rd,[Rn,Op2]
-其中Rn是基址寄存器,用于存放基地址;"cond"的作用与数据操作指令相同;"type"指定指令"op"操作的数据类型,共有四种:
+```
+
+>其中Rn是基址寄存器,用于存放基地址;"cond"的作用与数据操作指令相同;"type"指定指令"op"操作的数据类型,共有四种:
+
+```
 B(unsigned Byte)
 无符号byte(执行时扩展到32bit,以0填充);
 
@@ -192,8 +197,9 @@ H(unsigned Halfword)
 
 SH(Signed Halfword)
 有符号halfword(仅用于LDR指令;执行时扩展到32bit,以符号位填充).
+```
 
-如果不指定"type",则默认是word
+>如果不指定"type",则默认是word
 ARM内存操作基础指令只有2个,LDR(loaD Register)将数据从内存中读出来,存到寄存器中;STR(STore Register)将数组从寄存中读出来,存到内存中.两个指令的使用情况如下:
 
 * LDR
@@ -227,9 +233,99 @@ SRTD R4,R5, [R9,#offset]	; *(R9 + offset) = R4;*(R9 + offset + 4) = R5
 LDRD R4,R5,[R9,#offset] 	; R4 = *(R9 + offset); R5 = *(R9+offset+4)
 ```
 
-除LDR和STR外,还可以通过LDM(LoaD Multiple)和STM(STore Multipe)进行块传输,一次性操作多个寄存器.块传输指令的基本格式是op{cond}{}mode] Rd{!},reglist
-其中Rd是基址寄存器,可选的"!"制定Rd变化后的值是否写会Rd,
+>除LDR和STR外,还可以通过LDM(LoaD Multiple)和STM(STore Multipe)进行块传输,一次性操作多个寄存器.块传输指令的基本格式是
+>
+>```
+>op{cond}{}mode] Rd{!},reglist
+>```
+>
+其中Rd是基址寄存器,可选的"!"制定Rd变化后的值是否写会Rd, reglist是一系列寄存器,用大括号括起来,它们之间可以用","分割,也可以用"-"表示一个范围,比如,{R4-R6,R8}表示寄存器,R4,R5,R6,R8;这些寄存器的顺序是按照自身的编号由小到大排列的,与大括号内的排列顺序无关.
+	
+>需要特别注意的是,**LDM和STM的操作方向与LDR和STR完全相反:LDM是把从Rd开始,地址连续的内存数据存入reglist中,STM是把reglist中的值存入从Rd开始,地址连续的内存中.此处特别容易混淆**
+	
+"cond" 的作用与数据操作指令相同."mode"指定R4值得变化的4中规律,如下所示:
+
+```
+IA(Increament After)每次传输后增加Rd的值;
+
+IB(Increament Before)每次传输前增加Rd的值
+
+DA(Decrement After) 每次传输后减少Rd的值;
+
+DB(Decreament Before)每次传输前减少Rd的值.
+
+```
+
+>这是什么意思呢?下面以LDM为代表,举一个简单的例子,相信大家一看就明白了.在下图中,R0指向的值是5.
+
+>在执行以下命令后,R4,R5,R6的值分别变成:
+
+```
+foo():
+LDMIA R0, {R4 - R6};	R4 = 5, R5 = 6, R6 = 7
+LDMIB R0, {R4 - R6};	R4 = 6, R5 = 7, R6 = 8
+LDMDA R0, {R4 - R6};	R4 = 5, R5 = 4, R6 = 2
+LDMDB R0, {R4 - R6};	R4 = 4, R5 = 3, R6 = 3
+```
+>STM指令的作用方式与此类似,不再赘述.**LDM和STM的操作与LDR和STR完全相反**
 
 ##### 2.3 分支指令
+>分支指令可以分为无条件分支和条件分支两种.
+
+* 无条件分支
+
+```
+B Label;PC = Label
+BL Label;LR = PC - 4;PC = Label
+BX Rd ;PC = Rd并切换指令集
+eg:
+foo():
+	B Label ; 跳转到Label处并往下执行
+	......	; 得不到执行
+Label:
+	......
+```
+
+* 无条件分支
+
+>跳转分支的cond是依照掐面的flag来判断的,它们的对应关系如下:
+
+cond	| flag
+--- 	| 	---
+EQ 		| 	Z = 1
+NE 		|	Z = 0 
+CS 		| 	C = 1
+HS		|	C = 1
+CC		| 	C = 0
+LO		|  	C = 0
+MI		| 	N = 1
+PL		| 	N = 0
+VS		| 	V = 1
+VC		| 	V = 0
+HI		| 	C = 1 & Z = 0
+LS		|  C = 0 | Z = 1
+GE		| 	N = V
+LT		| 	N != V
+GT		| 	Z = 0 & N = V
+LE		| 	Z = 1 | N != V
+
+>在条件分支指令钱会有一条数据操作指令来设置flag,分支指令根据falg的值来决定代码走向,举例如下:
+
+```
+Label:
+Lable1:
+	LDR R0, [R1], #4
+	CMP R0, 0; 如果R0 == 0,Z =1 ;	否则Z = 0
+	BNE Label ; Z == 0则跳转
+```
 
 ##### 2.4 THUMB指令
+>THUMB指令集是ARM指令集的一个子集,每条THUMB指令均为16bit;因此THUMB指令比ARM指令更节省空间,且在16位数据总线上的传输效率更高.有得必有失,除了"b"之外,所有的THUMB指令均无法条件执行;桶式移位无法结合其他指令执行;大多数THUMB指令只能使用R0-R7这8个寄存器等.相对于ARM指令,THUMB指令的特点如下:
+
+* 指令数量减少
+* 没有条件执行
+* 所有指令默认附带*
+* 桶式移位无法结合其他指令执行
+* 寄存器使用受限
+* 立即数和第二操作数使用有限
+* 不支持数据写回
